@@ -94,6 +94,9 @@ def main():
         keywords = result["detected_keywords"]
         st.write("Detected Suspicious Keywords:", ", ".join(keywords) if keywords else "None")
 
+        st.subheader("Risk Explanation")
+        st.write(result["risk_explanation"])
+
         breakdown = result["risk_breakdown"]
         st.subheader("Risk Score Breakdown")
         st.write(f"Base score from predicted label `{result['prediction']}`: {breakdown['base_score']}")
@@ -101,7 +104,9 @@ def main():
             bonus_df = pd.DataFrame(breakdown["keyword_bonus"])
             st.dataframe(bonus_df, use_container_width=True, hide_index=True)
         else:
-            st.write("No keyword bonus added.")
+            st.write("No additional investment scam risk signal detected.")
+        if breakdown["combination_bonus"]:
+            st.write(f"Combination risk bonus: {breakdown['combination_bonus']}")
         cap_note = " Score capped at 100." if breakdown["score_cap_applied"] else ""
         st.write(f"Raw score: {breakdown['raw_score']} -> Final score: {breakdown['final_score']}.{cap_note}")
 

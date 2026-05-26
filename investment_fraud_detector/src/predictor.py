@@ -3,7 +3,12 @@ from pathlib import Path
 import joblib
 
 from src.preprocessing import clean_text
-from src.risk_scoring import calculate_risk_breakdown, calculate_risk_score, get_risk_level
+from src.risk_scoring import (
+    calculate_risk_breakdown,
+    calculate_risk_score,
+    generate_risk_explanation,
+    get_risk_level,
+)
 
 
 DEFAULT_MODEL_NAME = "logistic_regression"
@@ -23,10 +28,16 @@ def predict_message(text, models_dir="models", model_name=DEFAULT_MODEL_NAME):
     predicted_label = model.predict(features)[0]
     risk_score, detected_keywords = calculate_risk_score(predicted_label, text)
     risk_breakdown = calculate_risk_breakdown(predicted_label, text)
+    risk_explanation = generate_risk_explanation(
+        predicted_label,
+        risk_score,
+        risk_breakdown["keyword_bonus"],
+    )
     return {
         "prediction": predicted_label,
         "risk_score": risk_score,
         "risk_level": get_risk_level(risk_score),
         "detected_keywords": detected_keywords,
         "risk_breakdown": risk_breakdown,
+        "risk_explanation": risk_explanation,
     }

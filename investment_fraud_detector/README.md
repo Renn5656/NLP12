@@ -120,6 +120,7 @@ The demo includes:
 - Risk score
 - Risk level
 - Detected suspicious keywords
+- Human-readable risk explanation
 - Risk score breakdown
 - Single-message comparison across all four models
 - Model comparison charts
@@ -130,25 +131,35 @@ The demo includes:
 
 Base scores:
 
-- `Normal`: 20
-- `Suspicious`: 55
-- `Fraud`: 85
+- `Normal`: 15
+- `Suspicious`: 40
+- `Fraud`: 65
 
-Extra keyword scores:
+Extra investment scam signal scores:
 
-- `guaranteed profit`: +10
-- `zero risk`: +10
-- `double your money`: +10
-- `join now`: +5
-- `limited quota`: +5
-- `vip`: +5
-- `risk-free`: +10
-- `urgent`: +5
+- Guaranteed profit claim: +8
+- No-risk claim: +8
+- Unrealistic return: +7
+- Crypto or digital asset payment: +5
+- VIP or private group lure: +4
+- Urgency or scarcity: +4
+- Advance fee or withdrawal obstacle: +10
+- Fake platform claim: +5
+- Relationship investment pattern: +5
+- High-risk payment method: +7
 
 Maximum score is 100.
 
+Combination bonuses:
+
+- Advance fee or withdrawal obstacle + crypto/payment signal: +8
+- Guaranteed profit claim + no-risk claim: +5
+- Relationship investment pattern + crypto signal: +5
+
 Risk level:
 
-- `0-35`: Low Risk
-- `36-70`: Medium Risk
-- `71-100`: High Risk
+- `0-25`: Very Low Risk
+- `26-35`: Low Risk
+- `36-60`: Medium Risk
+- `61-80`: High Risk
+- `81-100`: Very High Risk
