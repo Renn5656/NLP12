@@ -1,0 +1,1 @@
+"""Investment fraud detector package."""
