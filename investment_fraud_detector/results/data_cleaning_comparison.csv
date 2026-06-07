@@ -1,0 +1,7 @@
+Stage,label,Count,Mean_Length
+Before cleaning,Fraud,792,155.37247474747474
+Before cleaning,Normal,4633,78.2434707532916
+Before cleaning,Suspicious,300,219.49333333333334
+After cleaning,Fraud,852,461.7300469483568
+After cleaning,Normal,3109,289.41138629784496
+After cleaning,Suspicious,808,429.68440594059405

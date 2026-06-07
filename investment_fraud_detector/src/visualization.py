@@ -34,6 +34,50 @@ def plot_label_distribution(df, results_dir="results"):
     _save_current_plot(results_dir / "label_distribution.png")
 
 
+def plot_split_distribution(split_distribution, results_dir="results"):
+    results_dir = Path(results_dir)
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(
+        data=split_distribution,
+        x="split",
+        y="Count",
+        hue="label",
+        order=["train", "validation", "test"],
+        hue_order=LABEL_ORDER,
+        palette="Set2",
+    )
+    ax.set_title("Fixed 70/20/10 Dataset Split")
+    ax.set_xlabel("Dataset Partition")
+    ax.set_ylabel("Messages")
+    _save_current_plot(results_dir / "split_distribution.png")
+
+
+def plot_text_length_distribution(df, results_dir="results"):
+    results_dir = Path(results_dir)
+    plot_df = df[["label", "text"]].copy()
+    plot_df["Text Length"] = plot_df["text"].astype(str).str.len()
+    plt.figure(figsize=(10, 6))
+    ax = sns.boxplot(data=plot_df, x="label", y="Text Length", order=LABEL_ORDER, showfliers=False)
+    ax.set_title("Text Length Distribution by Label")
+    ax.set_xlabel("Label")
+    ax.set_ylabel("Characters")
+    _save_current_plot(results_dir / "text_length_distribution.png")
+
+
+def plot_data_cleaning_comparison(comparison_df, results_dir="results"):
+    results_dir = Path(results_dir)
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    sns.barplot(data=comparison_df, x="label", y="Count", hue="Stage", ax=axes[0], palette="Set2")
+    axes[0].set_title("Class Counts Before and After Cleaning")
+    axes[0].set_xlabel("Label")
+    axes[0].set_ylabel("Messages")
+    sns.barplot(data=comparison_df, x="label", y="Mean_Length", hue="Stage", ax=axes[1], palette="Set1")
+    axes[1].set_title("Mean Text Length Before and After Cleaning")
+    axes[1].set_xlabel("Label")
+    axes[1].set_ylabel("Characters")
+    _save_current_plot(results_dir / "data_cleaning_comparison.png")
+
+
 def plot_model_comparison(metrics_df, results_dir="results"):
     results_dir = Path(results_dir)
     plot_df = metrics_df.melt(
@@ -50,6 +94,32 @@ def plot_model_comparison(metrics_df, results_dir="results"):
     ax.set_ylabel("Score")
     plt.xticks(rotation=15, ha="right")
     _save_current_plot(results_dir / "model_comparison.png")
+
+
+def plot_baseline_comparison(comparison_df, results_dir="results"):
+    results_dir = Path(results_dir)
+    plt.figure(figsize=(9, 5))
+    ax = sns.barplot(data=comparison_df, x="Method", y="Macro F1", hue="Method", palette="Set2", legend=False)
+    ax.set_title("Metadata Baseline vs Text Models")
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("")
+    ax.set_ylabel("Macro F1-score")
+    plt.xticks(rotation=15, ha="right")
+    _save_current_plot(results_dir / "baseline_comparison.png")
+
+
+def plot_model_top_features(feature_df, results_dir="results"):
+    results_dir = Path(results_dir)
+    labels = list(feature_df["Label"].unique())
+    fig, axes = plt.subplots(1, len(labels), figsize=(15, 6), sharex=False)
+    for axis, label in zip(axes, labels):
+        subset = feature_df[feature_df["Label"] == label].sort_values("Weight")
+        sns.barplot(data=subset, x="Weight", y="Feature", ax=axis, hue="Feature", palette="viridis", legend=False)
+        axis.set_title(label)
+        axis.set_xlabel("Logistic Regression Weight")
+        axis.set_ylabel("")
+    fig.suptitle("Top Features by Predicted Class")
+    _save_current_plot(results_dir / "model_top_features.png")
 
 
 def plot_confusion_matrix(cm, labels, best_model_name, results_dir="results"):

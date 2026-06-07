@@ -23,7 +23,6 @@ investment_fraud_detector/
 |   |-- model_training.py
 |   |-- model_evaluation.py
 |   |-- predictor.py
-|   |-- risk_scoring.py
 |   `-- visualization.py
 |-- models/
 |-- results/
@@ -60,19 +59,42 @@ Saved files:
 python evaluate.py
 ```
 
-`evaluate.py` uses an 80/20 train-test split for fair model comparison.
+`evaluate.py` uses grouped train-test splitting for fair model comparison.
 Do not evaluate with the full training dataset, because that would test the models on messages they already saw.
+
+The dataset contains fixed group-isolated partitions:
+
+- Training: approximately 70%
+- Validation: approximately 20%
+- Test: approximately 10%
+
+Models are trained on the training partition, selected using validation Macro
+F1, and reported once on the final test partition.
 
 Saved model comparison outputs:
 
 - `results/metrics.csv`
 - `results/classification_report.txt`
+- `results/test_set_composition.csv`
+- `results/split_distribution.csv`
+- `results/validation_metrics.csv`
+- `results/model_selection_summary.csv`
+- `results/metadata_baseline.csv`
+- `results/baseline_comparison.csv`
+- `results/error_analysis.csv`
+- `results/model_top_features.csv`
+- `results/data_cleaning_comparison.csv`
 - `results/model_comparison.png`
 - `results/confusion_matrix_best_model.png`
+- `results/baseline_comparison.png`
+- `results/model_top_features.png`
+- `results/data_cleaning_comparison.png`
+- `results/split_distribution.png`
 
 Saved data analysis outputs:
 
 - `results/label_distribution.png`
+- `results/text_length_distribution.png`
 - `results/fraud_word_frequency.png`
 - `results/tfidf_top_words.png`
 
@@ -81,9 +103,9 @@ Saved data analysis outputs:
 | Model | Strength | Weakness | Best Use |
 | --- | --- | --- | --- |
 | Naive Bayes | Fast and simple baseline model | May miss more complex fraud wording | Quick first-pass filtering or classroom baseline comparison |
-| Logistic Regression | Stable overall performance and easy to explain | Limited ability to model complex language patterns | Recommended main model for this project |
-| SVM | Strong text classification performance | Less direct probability interpretation | When high classification accuracy matters more than probability output |
-| Random Forest | Can capture non-linear feature patterns | Large model size and not always ideal for sparse TF-IDF text | Comparison model for explaining trade-offs |
+| Logistic Regression | Stable linear text classifier and easy to explain | Lower grouped holdout F1 in the current experiment | Interpretable linear comparison model |
+| SVM | Highest grouped holdout and cross-validation F1 in the current experiment | Its displayed class scores are not calibrated probabilities | Default lightweight screening model |
+| Random Forest | Can capture non-linear patterns | Larger, slower, and lower F1 in the current experiment | Non-linear comparison model |
 
 ## Single Prediction
 
@@ -95,9 +117,12 @@ Example output:
 
 ```text
 Prediction: Fraud
-Risk Level: High Risk
-Risk Score: 100
-Detected Suspicious Keywords: guaranteed profit, zero risk, vip
+Model Confidence: 92.35%
+Needs Review: No
+Class Scores:
+  Fraud: 92.35%
+  Suspicious: 5.10%
+  Normal: 2.55%
 ```
 
 ## Streamlit Demo
@@ -117,49 +142,47 @@ The demo includes:
 - Message input
 - Analyze button
 - Predicted label
-- Risk score
-- Risk level
-- Detected suspicious keywords
-- Human-readable risk explanation
-- Risk score breakdown
+- Model confidence and class scores
+- Low-confidence review status
 - Single-message comparison across all four models
+- Batch CSV screening and result download
 - Model comparison charts
 - Model comparison table with Fraud metrics, cross-validation F1, timing, and model size
 - Data analysis charts
 
-## Risk Scoring
+## Rebuild the Dataset
 
-Base scores:
+```bash
+python build_dataset.py
+```
 
-- `Normal`: 15
-- `Suspicious`: 40
-- `Fraud`: 65
+The rebuild process:
 
-Extra investment scam signal scores:
+- Keeps original everyday messages as negative examples.
+- Removes original fraud messages unrelated to investment fraud.
+- Removes suspicious messages containing obvious label-leakage wording.
+- Adds longer synthetic investment messages to all three classes.
+- Marks every row with `source` and `template_group`.
 
-- Guaranteed profit claim: +8
-- No-risk claim: +8
-- Unrealistic return: +7
-- Crypto or digital asset payment: +5
-- VIP or private group lure: +4
-- Urgency or scarcity: +4
-- Advance fee or withdrawal obstacle: +10
-- Fake platform claim: +5
-- Relationship investment pattern: +5
-- High-risk payment method: +7
+Synthetic examples are included for controlled model comparison and must be
+reported as synthetic data. They should not be presented as real scam reports.
 
-Maximum score is 100.
+## Evaluation Design
 
-Combination bonuses:
+`evaluate.py` uses grouped splitting and grouped five-fold cross-validation.
+Messages from the same synthetic scenario family cannot appear in both the
+training and test partitions. This produces a more realistic estimate than a
+random split of similar synthetic messages.
 
-- Advance fee or withdrawal obstacle + crypto/payment signal: +8
-- Guaranteed profit claim + no-risk claim: +5
-- Relationship investment pattern + crypto signal: +5
+## Application Layer
 
-Risk level:
+The Streamlit application uses only model outputs. It does not use manually
+assigned keyword bonuses or a heuristic risk score.
 
-- `0-25`: Very Low Risk
-- `26-35`: Low Risk
-- `36-60`: Medium Risk
-- `61-80`: High Risk
-- `81-100`: Very High Risk
+Application features:
+
+- Single-message classification
+- Model-derived class scores
+- Comparison across all four models
+- Low-confidence review flag
+- Batch CSV screening and downloadable results

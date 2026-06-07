@@ -1,17 +1,12 @@
 from pathlib import Path
 
 import joblib
+import numpy as np
 
 from src.preprocessing import clean_text
-from src.risk_scoring import (
-    calculate_risk_breakdown,
-    calculate_risk_score,
-    generate_risk_explanation,
-    get_risk_level,
-)
 
 
-DEFAULT_MODEL_NAME = "logistic_regression"
+DEFAULT_MODEL_NAME = "svm"
 
 
 def load_predictor(models_dir="models", model_name=DEFAULT_MODEL_NAME):
@@ -26,18 +21,25 @@ def predict_message(text, models_dir="models", model_name=DEFAULT_MODEL_NAME):
     cleaned = clean_text(text)
     features = vectorizer.transform([cleaned])
     predicted_label = model.predict(features)[0]
-    risk_score, detected_keywords = calculate_risk_score(predicted_label, text)
-    risk_breakdown = calculate_risk_breakdown(predicted_label, text)
-    risk_explanation = generate_risk_explanation(
-        predicted_label,
-        risk_score,
-        risk_breakdown["keyword_bonus"],
-    )
+    probabilities = get_class_scores(model, features)
+    confidence = probabilities[predicted_label]
     return {
         "prediction": predicted_label,
-        "risk_score": risk_score,
-        "risk_level": get_risk_level(risk_score),
-        "detected_keywords": detected_keywords,
-        "risk_breakdown": risk_breakdown,
-        "risk_explanation": risk_explanation,
+        "confidence": confidence,
+        "class_scores": probabilities,
+        "needs_review": confidence < 0.60,
+    }
+
+
+def get_class_scores(model, features):
+    """Return model-derived class scores without keyword or rule-based bonuses."""
+    if hasattr(model, "predict_proba"):
+        values = model.predict_proba(features)[0]
+    else:
+        decision = np.asarray(model.decision_function(features))[0]
+        decision = decision - decision.max()
+        values = np.exp(decision) / np.exp(decision).sum()
+    return {
+        label: float(score)
+        for label, score in zip(model.classes_, values)
     }

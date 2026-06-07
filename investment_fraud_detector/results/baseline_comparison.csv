@@ -1,0 +1,6 @@
+Method,Macro F1
+Metadata-only Logistic Regression,0.6709446072427206
+Logistic Regression,0.9974447525009323
+SVM,0.9974447525009323
+Random Forest,0.9922131313131312
+Naive Bayes,0.9883125757527607

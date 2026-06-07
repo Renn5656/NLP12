@@ -1,0 +1,10 @@
+model,text,actual_label,predicted_label,source,template_group,confidence
+Logistic Regression,A private trading pool is advertised with double your money and urgent language about closing access soon.,Fraud,Normal,original_sms_dataset,original_5247,0.7772558750766819
+Naive Bayes,A private trading pool is advertised with double your money and urgent language about closing access soon.,Fraud,Normal,original_sms_dataset,original_5247,0.8241602538330699
+Naive Bayes,Send me your resume:-),Normal,Fraud,original_sms_dataset,original_4435,0.5919579147402992
+Naive Bayes,A secret investment desk is promoting fixed daily return and asks readers to act before verification is possible. It presents the opportunity as exclusive while hiding basic details about custody and withdrawal rules.,Fraud,Suspicious,original_sms_dataset,original_5252,0.4598075313454389
+Naive Bayes,This insurance provider shares a seasonal reminder to review coverage needs and compare policy options. The offer is informational and avoids pressure to transfer money immediately.,Normal,Fraud,original_sms_dataset,original_5261,0.4048617904598144
+Random Forest,Our international finance team is onboarding new clients for a private wealth program this week. Users are invited to register for a demonstration and review the terms before funding an account.,Suspicious,Normal,synthetic_short,suspicious_promotional_platform_opener_4,0.545
+Random Forest,"A senior account manager has prepared a time-sensitive proposal for people interested in alternative assets. The invitation uses urgency and exclusivity, although it does not explicitly guarantee a return.",Suspicious,Normal,synthetic_short,suspicious_limited_offer_opener_2,0.515
+Random Forest,A private trading pool is advertised with double your money and urgent language about closing access soon.,Fraud,Normal,original_sms_dataset,original_5247,0.515
+SVM,A private trading pool is advertised with double your money and urgent language about closing access soon.,Fraud,Normal,original_sms_dataset,original_5247,0.6199545963695078

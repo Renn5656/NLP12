@@ -1,6 +1,7 @@
 from pathlib import Path
 import time
 
+import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
@@ -106,6 +107,41 @@ def save_evaluation_results(metrics_df, class_metrics_df, reports, y_test, predi
     labels = [label for label in LABEL_ORDER if label in set(y_test)]
     cm = confusion_matrix(y_test, predictions[best_model_id], labels=labels)
     return best_model_id, cm, labels
+
+
+def save_error_analysis(df, y_test, models, vectorizer, predictions, results_dir="results"):
+    results_dir = Path(results_dir)
+    features = vectorizer.transform(df.loc[y_test.index, "clean_text"])
+    rows = []
+    for model_id, model in models.items():
+        scores = _class_scores(model, features)
+        predicted = predictions[model_id]
+        for position, row_index in enumerate(y_test.index):
+            if predicted[position] == y_test.loc[row_index]:
+                continue
+            rows.append(
+                {
+                    "model": pretty_model_name(model_id),
+                    "text": df.loc[row_index, "text"],
+                    "actual_label": y_test.loc[row_index],
+                    "predicted_label": predicted[position],
+                    "source": df.loc[row_index, "source"],
+                    "template_group": df.loc[row_index, "template_group"],
+                    "confidence": scores[position].max(),
+                }
+            )
+    error_df = pd.DataFrame(rows).sort_values(["model", "confidence"], ascending=[True, False])
+    error_df.to_csv(results_dir / "error_analysis.csv", index=False)
+    return error_df
+
+
+def _class_scores(model, features):
+    if hasattr(model, "predict_proba"):
+        return model.predict_proba(features)
+    decision = np.asarray(model.decision_function(features))
+    decision = decision - decision.max(axis=1, keepdims=True)
+    exponentials = np.exp(decision)
+    return exponentials / exponentials.sum(axis=1, keepdims=True)
 
 
 def pretty_model_name(model_name):

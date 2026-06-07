@@ -39,10 +39,11 @@ def main():
     result = predict_message(args.text, MODELS_DIR, args.model)
 
     print(f"Prediction: {result['prediction']}")
-    print(f"Risk Level: {result['risk_level']}")
-    print(f"Risk Score: {result['risk_score']}")
-    keywords = ", ".join(result["detected_keywords"]) if result["detected_keywords"] else "None"
-    print(f"Detected Suspicious Keywords: {keywords}")
+    print(f"Model Confidence: {result['confidence']:.2%}")
+    print(f"Needs Review: {'Yes' if result['needs_review'] else 'No'}")
+    print("Class Scores:")
+    for label, score in sorted(result["class_scores"].items(), key=lambda item: item[1], reverse=True):
+        print(f"  {label}: {score:.2%}")
 
 
 if __name__ == "__main__":

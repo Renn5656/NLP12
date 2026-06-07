@@ -1,0 +1,10 @@
+label,source,Count
+Fraud,original_sms_dataset,2
+Fraud,synthetic_compositional,72
+Fraud,synthetic_short,9
+Normal,original_sms_dataset,156
+Normal,synthetic_compositional,149
+Normal,synthetic_short,6
+Suspicious,original_sms_dataset,12
+Suspicious,synthetic_compositional,63
+Suspicious,synthetic_short,6

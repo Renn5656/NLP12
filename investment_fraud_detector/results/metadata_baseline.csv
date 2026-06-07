@@ -1,0 +1,2 @@
+Method,Accuracy,Macro F1,Fraud Recall
+Metadata-only Logistic Regression,0.6357894736842106,0.6709446072427206,0.8674698795180723

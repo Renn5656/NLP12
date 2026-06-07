@@ -68,7 +68,42 @@ def show_model_comparison_table():
         hide_index=True,
     )
     st.caption(
-        "CV F1-score uses 5-fold cross validation. Fraud Recall shows how well the model avoids missing fraud messages."
+        "Table values are final test results. The default model is selected using validation Macro F1."
+    )
+
+
+def compare_models(message):
+    rows = []
+    for model_name in ["naive_bayes", "logistic_regression", "svm", "random_forest"]:
+        result = predict_message(message, MODELS_DIR, model_name)
+        rows.append(
+            {
+                "Model": model_name.replace("_", " ").title(),
+                "Prediction": result["prediction"],
+                "Model Score": result["confidence"],
+                "Needs Review": result["needs_review"],
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def analyze_batch(uploaded_file):
+    batch = pd.read_csv(uploaded_file)
+    if "text" not in batch.columns:
+        st.error("Uploaded CSV must contain a `text` column.")
+        return
+
+    results = [predict_message(text, MODELS_DIR, DEFAULT_MODEL_NAME) for text in batch["text"].fillna("")]
+    output = batch.copy()
+    output["prediction"] = [result["prediction"] for result in results]
+    output["model_confidence"] = [result["confidence"] for result in results]
+    output["needs_review"] = [result["needs_review"] for result in results]
+    st.dataframe(output, use_container_width=True, hide_index=True)
+    st.download_button(
+        "Download screening results",
+        output.to_csv(index=False),
+        file_name="investment_message_screening.csv",
+        mime="text/csv",
     )
 
 
@@ -78,51 +113,32 @@ def main():
 
     ensure_models_exist()
 
-    message = st.text_area(
-        "Message",
-        value="Guaranteed profit with zero risk. Join our VIP crypto group now!",
-        height=140,
-    )
+    single_tab, batch_tab = st.tabs(["Single Message", "Batch Screening"])
 
-    if st.button("Analyze", type="primary"):
-        result = predict_message(message, MODELS_DIR, DEFAULT_MODEL_NAME)
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Predicted Label", result["prediction"])
-        col2.metric("Risk Score", result["risk_score"])
-        col3.metric("Risk Level", result["risk_level"])
+    with single_tab:
+        message = st.text_area(
+            "Message",
+            value="Guaranteed monthly returns with no possibility of loss. Transfer USDT to activate the account.",
+            height=140,
+        )
 
-        keywords = result["detected_keywords"]
-        st.write("Detected Suspicious Keywords:", ", ".join(keywords) if keywords else "None")
+        if st.button("Analyze", type="primary"):
+            result = predict_message(message, MODELS_DIR, DEFAULT_MODEL_NAME)
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Predicted Label", result["prediction"])
+            col2.metric("Model Confidence", f"{result['confidence']:.1%}")
+            col3.metric("Review Status", "Review" if result["needs_review"] else "Confident")
+            st.caption("SVM class scores support comparison and review routing; they are not calibrated probabilities.")
 
-        st.subheader("Risk Explanation")
-        st.write(result["risk_explanation"])
+            st.subheader("Compare This Message Across All Models")
+            comparison = compare_models(message)
+            comparison["Model Score"] = comparison["Model Score"].map(lambda value: f"{value:.2%}")
+            st.dataframe(comparison, use_container_width=True, hide_index=True)
 
-        breakdown = result["risk_breakdown"]
-        st.subheader("Risk Score Breakdown")
-        st.write(f"Base score from predicted label `{result['prediction']}`: {breakdown['base_score']}")
-        if breakdown["keyword_bonus"]:
-            bonus_df = pd.DataFrame(breakdown["keyword_bonus"])
-            st.dataframe(bonus_df, use_container_width=True, hide_index=True)
-        else:
-            st.write("No additional investment scam risk signal detected.")
-        if breakdown["combination_bonus"]:
-            st.write(f"Combination risk bonus: {breakdown['combination_bonus']}")
-        cap_note = " Score capped at 100." if breakdown["score_cap_applied"] else ""
-        st.write(f"Raw score: {breakdown['raw_score']} -> Final score: {breakdown['final_score']}.{cap_note}")
-
-        st.subheader("Compare This Message Across All Models")
-        comparison_rows = []
-        for model_name in ["naive_bayes", "logistic_regression", "svm", "random_forest"]:
-            model_result = predict_message(message, MODELS_DIR, model_name)
-            comparison_rows.append(
-                {
-                    "Model": model_name.replace("_", " ").title(),
-                    "Prediction": model_result["prediction"],
-                    "Risk Score": model_result["risk_score"],
-                    "Risk Level": model_result["risk_level"],
-                }
-            )
-        st.dataframe(pd.DataFrame(comparison_rows), use_container_width=True, hide_index=True)
+    with batch_tab:
+        uploaded_file = st.file_uploader("Upload messages CSV", type="csv")
+        if uploaded_file is not None:
+            analyze_batch(uploaded_file)
 
     st.divider()
     st.subheader("Model Comparison and Application")
@@ -141,6 +157,23 @@ def main():
         show_chart("label_distribution.png", "Label Distribution")
     with data_cols[1]:
         show_chart("fraud_word_frequency.png", "Fraud Word Frequency")
+    show_chart("split_distribution.png", "Fixed 70/20/10 Dataset Split")
+    show_chart("text_length_distribution.png", "Text Length Distribution by Label")
+
+    st.divider()
+    st.subheader("Bias and Explainability Analysis")
+    analysis_cols = st.columns(2)
+    with analysis_cols[0]:
+        show_chart("baseline_comparison.png", "Metadata Baseline vs Text Models")
+    with analysis_cols[1]:
+        show_chart("model_top_features.png", "Logistic Regression Top Features")
+    show_chart("data_cleaning_comparison.png", "Dataset Before and After Cleaning")
+
+    errors_path = RESULTS_DIR / "error_analysis.csv"
+    if errors_path.exists():
+        error_df = pd.read_csv(errors_path)
+        st.subheader("High-Confidence Misclassification Examples")
+        st.dataframe(error_df.head(20), use_container_width=True, hide_index=True)
 
 
 if __name__ == "__main__":
